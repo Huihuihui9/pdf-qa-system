@@ -1,7 +1,8 @@
-.env
+﻿.env
 __pycache__/
 *.pyc
 output/
+work/
 *.log
 .vscode/
 .idea/
