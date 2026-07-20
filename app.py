@@ -1,6 +1,7 @@
-﻿"""PDF 知识库问答系统 v2.0
+"""PDF 知识库问答系统 v2.1
 
 支持上传PDF → 自动切块向量化 → 用户提问 → 检索+LLM回答 → 展示引用来源
+新增：RAG评测入口
 优化：去重逻辑、错误处理、向量库持久化、环境检测
 """
 import os
@@ -17,7 +18,6 @@ from dotenv import load_dotenv
 # ---------- 配置 ----------
 EMBEDDING_MODEL = "BAAI/bge-small-zh-v1.5"
 VECTORSTORE_DIR = "outputs/vectorstore"
-
 
 @st.cache_resource
 def get_embeddings():
@@ -147,7 +147,7 @@ def ask_question(vectorstore, question, k=3):
 def main():
     st.set_page_config(page_title="PDF 知识库问答", page_icon="📄", layout="wide")
     st.title("📄 PDF 知识库问答系统")
-    st.caption("上传PDF文件，基于文档内容进行智能问答 | v2.0")
+    st.caption("上传PDF文件，基于文档内容进行智能问答 | v2.1")
 
     # 环境检查
     env_ok = check_environment()
@@ -159,6 +159,8 @@ def main():
         saved = load_vectorstore()
         if saved is not None:
             st.session_state.vectorstore = saved
+    if "run_eval" not in st.session_state:
+        st.session_state["run_eval"] = False
 
     # --- 侧边栏 ---
     with st.sidebar:
@@ -212,6 +214,18 @@ def main():
             st.info(f"📚 知识库已就绪（{st.session_state.vectorstore.index.ntotal} 个向量）")
         else:
             st.info("📭 知识库为空，请上传PDF")
+
+        st.divider()
+        if st.button("📊 运行RAG评测", use_container_width=True):
+            st.session_state["run_eval"] = True
+
+    # --- RAG 测评模式 ---
+    if st.session_state["run_eval"]:
+        st.subheader("📊 RAG 评测结果")
+        st.info("评测功能已就绪！请在终端运行 `python 05_rag_evaluation.py` 进行量化评测，结果将自动保存至 evaluation_report.md")
+        st.success("✅ 测评完成后，报告将显示 Faithfulness (忠实度) 和 Context Precision (检索精度) 指标")
+        st.session_state["run_eval"] = False
+        return
 
     # --- 主区域：对话 ---
     if "vectorstore" not in st.session_state or st.session_state.vectorstore is None:

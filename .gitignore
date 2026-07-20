@@ -6,3 +6,4 @@ work/
 *.log
 .vscode/
 .idea/
+outputs/
